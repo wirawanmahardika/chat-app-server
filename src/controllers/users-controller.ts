@@ -45,9 +45,9 @@ const usersRoute = new Elysia({ prefix: "/users" })
         maxAge: 3600 * 24,
         path: "/",
         priority: "high",
-        secrets: process.env.COOKIE_AUTH_SECRET || "asdfoaur8eqw795873948",
         value: await jwt.sign({ username: body.username, id: user.id }),
         sameSite: "strict",
+        expires: new Date(Date.now() + 1000 * 3600 * 24),
         secure: process.env.IS_HTTPS ? true : false,
       });
 
@@ -91,6 +91,10 @@ const userRoute = new Elysia({ prefix: "/user" })
     },
     usersServices.photo.schema
   )
+  .delete("/", ({ cookie }) => {
+    cookie.auth.remove();
+    return `Berhasil logout`;
+  })
   .post(
     "/add-friend",
     async ({ body, user }) => {

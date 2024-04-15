@@ -3,7 +3,12 @@ import corsConfig from "./config/cors";
 import usersController from "./controllers/users-controller";
 
 const port = process.env.PORT || 3000;
-new Elysia()
+new Elysia({
+  cookie: {
+    secrets: process.env.COOKIE_AUTH_SECRET,
+    sign: ["auth"],
+  },
+})
   .use(corsConfig())
   .use(usersController)
   .onError(() => {
