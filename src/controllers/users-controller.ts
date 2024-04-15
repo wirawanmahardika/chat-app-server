@@ -113,10 +113,21 @@ const userRoute = new Elysia({ prefix: "/user" })
       return new Response(response);
     },
     usersServices.addFriend.schema
-  );
-// .get("/friend-requests", async ({ user }) => {
-//   const requests =
-//     await usersServices.friendRequests.repository.getAllRequests(user.id);
-// });
+  )
+  .get("/friend-requests", async ({ user }) => {
+    const requests =
+      await usersServices.friendRequests.repository.getAllRequests(user.id);
+
+    return requests.map((r) => {
+      return {
+        ...r,
+        user_1: {
+          ...r.user_1,
+          photo_profile:
+            process.env.SERVER_URL + "/api/v1/user/photo/" + r.user_1.id,
+        },
+      };
+    });
+  });
 
 export default new Elysia({ prefix: "/api/v1" }).use(usersRoute).use(userRoute);

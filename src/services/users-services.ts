@@ -79,7 +79,10 @@ class photoRepositories {
 
 const addFriendSchema = {
   body: t.Object({
-    id_friend: t.String(),
+    id_friend: t.String({
+      format: "uuid",
+      error: "invalid ID, tolong cek kembali",
+    }),
   }),
 };
 
@@ -122,13 +125,18 @@ class friendRequests {
   static async getAllRequests(id_user: string) {
     return prisma.friendships.findMany({
       where: {
-        OR: [
-          {
-            id_user_1: id_user,
+        id_user_2: id_user,
+        status: { notIn: ["friend", "blocked"] },
+      },
+      include: {
+        user_1: {
+          select: {
+            email: true,
+            id: true,
+            fullname: true,
+            username: true,
           },
-          { id_user_2: id_user },
-        ],
-        status: { notIn: ["pending", "blocked"] },
+        },
       },
     });
   }

@@ -15,6 +15,9 @@ model Users {
   password String
   photo_profile Bytes @db.MediumBlob
 
+  user_1 Friendships[] @relation(name: "user_1_relation")
+  user_2 Friendships[] @relation(name: "user_2_relation")
+
   @@map("users")
 }
 
@@ -29,6 +32,9 @@ model Friendships {
   id_user_2 String @db.Char(36)
   created_at DateTime @default(now())
   status friendship_status
+
+  user_1 Users @relation(fields: [id_user_1], references: [id], name: "user_1_relation")
+  user_2 Users @relation(fields: [id_user_2], references: [id], name: "user_2_relation")
 
   @@map("friendships")
 }
