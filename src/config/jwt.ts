@@ -6,6 +6,6 @@ export default function jwtConf() {
     secret: process.env.JWT_SECRET || "aosiudoiweu83579384",
     exp: "1d",
     name: "jwt",
-    schema: t.Object({ username: t.String() }),
+    schema: t.Object({ username: t.String(), id: t.String() }),
   });
 }

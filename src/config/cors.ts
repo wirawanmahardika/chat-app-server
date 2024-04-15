@@ -4,7 +4,8 @@ export default function corsConfig() {
   return cors({
     credentials: true,
     maxAge: 3600 * 24,
-    origin: true,
+    origin: "localhost:5173",
     methods: ["GET", "PATCH", "DELETE", "POST"],
+    allowedHeaders: ["Content-Type"],
   });
 }

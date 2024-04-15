@@ -77,6 +77,63 @@ class photoRepositories {
   }
 }
 
+const addFriendSchema = {
+  body: t.Object({
+    id_friend: t.String(),
+  }),
+};
+
+class addFriendRepository {
+  static async addFriend(id_user_1: string, id_user_2: string) {
+    const friendship = await prisma.friendships.findFirst({
+      where: {
+        OR: [
+          { id_user_1: id_user_1, id_user_2: id_user_2 },
+          { id_user_1: id_user_2, id_user_2: id_user_1 },
+        ],
+      },
+      select: { id_friendship: true },
+    });
+
+    if (friendship) {
+      await prisma.friendships.update({
+        where: { id_friendship: friendship.id_friendship },
+        data: {
+          status: "friend",
+        },
+      });
+
+      return "Berhasil menjalin pertemanan";
+    }
+
+    await prisma.friendships.create({
+      data: {
+        id_user_1: id_user_1,
+        id_user_2: id_user_2,
+        status: "pending",
+      },
+    });
+
+    return "Berhasil mengirim permintaan pertemanan";
+  }
+}
+
+class friendRequests {
+  static async getAllRequests(id_user: string) {
+    return prisma.friendships.findMany({
+      where: {
+        OR: [
+          {
+            id_user_1: id_user,
+          },
+          { id_user_2: id_user },
+        ],
+        status: { notIn: ["pending", "blocked"] },
+      },
+    });
+  }
+}
+
 export default {
   signup: {
     schema: signupSchema,
@@ -92,5 +149,12 @@ export default {
   photo: {
     schema: photoSchema,
     repository: photoRepositories,
+  },
+  addFriend: {
+    schema: addFriendSchema,
+    repository: addFriendRepository,
+  },
+  friendRequests: {
+    repository: friendRequests,
   },
 };

@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Users {
-  id String @id @default(uuid())
+  id String @id @db.Char(36) @default(uuid())
   fullname String
   username String @unique
   email String
@@ -16,4 +16,19 @@ model Users {
   photo_profile Bytes @db.MediumBlob
 
   @@map("users")
+}
+
+enum friendship_status {
+  pending
+  friend
+  blocked
+}
+model Friendships {
+  id_friendship String @id @db.Char(36) @default(uuid())
+  id_user_1 String @db.Char(36)
+  id_user_2 String @db.Char(36)
+  created_at DateTime @default(now())
+  status friendship_status
+
+  @@map("friendships")
 }
