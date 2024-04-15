@@ -71,7 +71,25 @@ const userRoute = new Elysia({ prefix: "/user" })
   })
   .get("/info", async ({ user: { username } }) => {
     const userData = await usersServices.info.repository.getUserData(username);
-    return { ...userData, photo_profile: "" };
-  });
+    return {
+      ...userData,
+      photo_profile:
+        process.env.SERVER_URL + "/api/v1/user/photo/" + userData?.id,
+    };
+  })
+  .get(
+    "/photo/:id_user",
+    async ({ params }) => {
+      const photo = await usersServices.photo.repository.getPhoto(
+        params.id_user
+      );
+      if (photo) {
+        return new Response(photo);
+      } else {
+        return new Response("photo doesnt exist", { status: 404 });
+      }
+    },
+    usersServices.photo.schema
+  );
 
 export default new Elysia({ prefix: "/api/v1" }).use(usersRoute).use(userRoute);

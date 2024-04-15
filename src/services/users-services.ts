@@ -52,11 +52,28 @@ class infoRepositories {
     return prisma.users.findUnique({
       where: { username },
       select: {
+        id: true,
         email: true,
         username: true,
         fullname: true,
       },
     });
+  }
+}
+
+const photoSchema = {
+  params: t.Object({
+    id_user: t.String(),
+  }),
+};
+
+class photoRepositories {
+  static async getPhoto(id_user: string) {
+    const data = await prisma.users.findUnique({
+      where: { id: id_user },
+      select: { photo_profile: true },
+    });
+    return data?.photo_profile;
   }
 }
 
@@ -71,5 +88,9 @@ export default {
   },
   info: {
     repository: infoRepositories,
+  },
+  photo: {
+    schema: photoSchema,
+    repository: photoRepositories,
   },
 };
