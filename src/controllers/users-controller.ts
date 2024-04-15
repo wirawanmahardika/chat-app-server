@@ -1,7 +1,9 @@
-import Elysia from "elysia";
+import Elysia, { Cookie } from "elysia";
 import usersServices from "../services/users-services";
+import jwtConf from "../config/jwt";
 
-export default new Elysia({ prefix: "/api/v1/users" })
+const usersRoute = new Elysia({ prefix: "/users" })
+  .use(jwtConf())
   .post(
     "/signup",
     async ({ body }) => {
@@ -27,7 +29,7 @@ export default new Elysia({ prefix: "/api/v1/users" })
   )
   .post(
     "/login",
-    async ({ body }) => {
+    async ({ body, cookie, jwt }) => {
       const user = await usersServices.login.repository.getUser(body.username);
 
       if (!user)
@@ -37,7 +39,39 @@ export default new Elysia({ prefix: "/api/v1/users" })
         return new Response("password salah", { status: 401 });
       }
 
+      cookie.auth.set({
+        httpOnly: true,
+        maxAge: 3600 * 24,
+        path: "/",
+        priority: "high",
+        secrets: process.env.COOKIE_AUTH_SECRET || "asdfoaur8eqw795873948",
+        value: await jwt.sign({ username: body.username }),
+        sameSite: "strict",
+        secure: process.env.IS_HTTPS ? true : false,
+      });
+
       return "Berhasil login";
     },
     usersServices.login.schema
   );
+
+const userRoute = new Elysia({ prefix: "/user" })
+  .use(jwtConf())
+  .derive(async ({ jwt, cookie }) => {
+    const jwtData = await jwt.verify(cookie.auth.value);
+    return {
+      authenticated: jwtData ? true : false,
+      user: jwtData ? jwtData : { username: "" },
+    };
+  })
+  .onBeforeHandle(async ({ authenticated }) => {
+    if (!authenticated) {
+      return new Response("Membutuhkan login terlebih dahulu", { status: 401 });
+    }
+  })
+  .get("/info", async ({ user: { username } }) => {
+    const userData = await usersServices.info.repository.getUserData(username);
+    return { ...userData, photo_profile: "" };
+  });
+
+export default new Elysia({ prefix: "/api/v1" }).use(usersRoute).use(userRoute);

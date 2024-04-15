@@ -47,6 +47,19 @@ class loginRepositories {
   }
 }
 
+class infoRepositories {
+  static async getUserData(username: string) {
+    return prisma.users.findUnique({
+      where: { username },
+      select: {
+        email: true,
+        username: true,
+        fullname: true,
+      },
+    });
+  }
+}
+
 export default {
   signup: {
     schema: signupSchema,
@@ -55,5 +68,8 @@ export default {
   login: {
     schema: loginSchema,
     repository: loginRepositories,
+  },
+  info: {
+    repository: infoRepositories,
   },
 };
