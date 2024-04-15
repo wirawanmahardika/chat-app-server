@@ -2,7 +2,7 @@ import { t } from "elysia";
 import prisma from "../app/prisma";
 import { usersType } from "../types/users-type";
 
-export const signupBodyValidation = {
+const signupSchema = {
   type: "multipart/form-data",
 
   body: t.Object({
@@ -24,7 +24,7 @@ export const signupBodyValidation = {
   }),
 };
 
-export class signupRepositories {
+class signupRepositories {
   static async countUser(username: string) {
     return prisma.users.count({ where: { username: username } });
   }
@@ -34,9 +34,26 @@ export class signupRepositories {
   }
 }
 
+const loginSchema = {
+  body: t.Object({
+    username: t.String({ error: "username is required" }),
+    password: t.String({ error: "password is required" }),
+  }),
+};
+
+class loginRepositories {
+  static async getUser(username: string) {
+    return prisma.users.findUnique({ where: { username } });
+  }
+}
+
 export default {
   signup: {
-    signupBodyValidation,
-    signupRepositories,
+    schema: signupSchema,
+    repository: signupRepositories,
+  },
+  login: {
+    schema: loginSchema,
+    repository: loginRepositories,
   },
 };
