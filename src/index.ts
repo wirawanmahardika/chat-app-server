@@ -1,9 +1,11 @@
 import Elysia, { t } from "elysia";
 import prisma from "./app/prisma";
 import { toBuffer } from "bun:ffi";
+import corsConfig from "./config/cors";
 
 const port = process.env.PORT || 3000;
 new Elysia()
+  .use(corsConfig())
   .post(
     "/signup",
     async ({ body }) => {
