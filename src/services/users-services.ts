@@ -142,6 +142,46 @@ class friendRequests {
   }
 }
 
+const requestResponseSchema = {
+  body: t.Object({
+    id_friendship: t.String({ format: "uuid", error: "invalid id" }),
+    rejection: t.Optional(t.Boolean({ default: false })),
+    status: t.Optional(
+      t.Union(
+        [t.Literal("pending"), t.Literal("friend"), t.Literal("blocked")],
+        {
+          error: "allowed status are pending, friend, or block",
+          default: "pending",
+        }
+      )
+    ),
+  }),
+};
+
+class requestResponseRepository {
+  static async updateFriendshipStatus(
+    id_friendship: string,
+    status: "pending" | "friend" | "blocked" | undefined,
+    rejection: boolean | undefined
+  ) {
+    if (rejection) {
+      await prisma.friendships.delete({ where: { id_friendship } });
+      return null;
+    } else {
+      const res = await prisma.friendships.update({
+        where: { id_friendship },
+        data: {
+          status: status,
+        },
+        select: {
+          status: true,
+        },
+      });
+      return res.status;
+    }
+  }
+}
+
 export default {
   signup: {
     schema: signupSchema,
@@ -164,5 +204,9 @@ export default {
   },
   friendRequests: {
     repository: friendRequests,
+  },
+  requestResponse: {
+    schema: requestResponseSchema,
+    repository: requestResponseRepository,
   },
 };

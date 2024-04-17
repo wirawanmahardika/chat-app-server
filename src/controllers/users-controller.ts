@@ -120,14 +120,32 @@ const userRoute = new Elysia({ prefix: "/user" })
 
     return requests.map((r) => {
       return {
-        ...r,
-        user_1: {
-          ...r.user_1,
-          photo_profile:
-            process.env.SERVER_URL + "/api/v1/user/photo/" + r.user_1.id,
-        },
+        id_friendship: r.id_friendship,
+        photo_profile:
+          process.env.SERVER_URL + "/api/v1/user/photo/" + r.user_1.id,
+        fullname: r.user_1.fullname,
+        created_at: r.created_at,
+        status: r.status,
       };
     });
-  });
+  })
+  .patch(
+    "/request-response",
+    async ({ body }) => {
+      const status =
+        await usersServices.requestResponse.repository.updateFriendshipStatus(
+          body.id_friendship,
+          body.status,
+          body.rejection
+        );
+
+      if (status === "friend") {
+        return "Berhasil menjalin pertemanan";
+      } else {
+        return "Berhasil menghapus permintaan pertemenan";
+      }
+    },
+    usersServices.requestResponse.schema
+  );
 
 export default new Elysia({ prefix: "/api/v1" }).use(usersRoute).use(userRoute);
