@@ -146,6 +146,15 @@ const userRoute = new Elysia({ prefix: "/user" })
       }
     },
     usersServices.requestResponse.schema
-  );
+  )
+  .get("/friends", async ({ user }) => {
+    const friends = await usersServices.friends.repository.getFriends(user.id);
+    return friends.map((f) => {
+      return {
+        ...f,
+        photo_profile: process.env.SERVER_URL + "/api/v1/user/photo/" + f.id,
+      };
+    });
+  });
 
 export default new Elysia({ prefix: "/api/v1" }).use(usersRoute).use(userRoute);

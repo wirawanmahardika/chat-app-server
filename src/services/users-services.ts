@@ -182,6 +182,41 @@ class requestResponseRepository {
   }
 }
 
+class friendsRepository {
+  static async getFriends(id_user: string) {
+    const usersByUser1 = await prisma.friendships.findMany({
+      where: { id_user_1: id_user },
+      select: {
+        id_user_2: true,
+      },
+    });
+
+    const usersByUser2 = await prisma.friendships.findMany({
+      where: { id_user_2: id_user },
+      select: {
+        id_user_1: true,
+      },
+    });
+
+    const friends = [
+      ...usersByUser1.map((u) => u.id_user_2),
+      ...usersByUser2.map((u) => u.id_user_1),
+    ];
+
+    return prisma.users.findMany({
+      where: {
+        id: { in: friends },
+      },
+      select: {
+        email: true,
+        fullname: true,
+        username: true,
+        id: true,
+      },
+    });
+  }
+}
+
 export default {
   signup: {
     schema: signupSchema,
@@ -208,5 +243,8 @@ export default {
   requestResponse: {
     schema: requestResponseSchema,
     repository: requestResponseRepository,
+  },
+  friends: {
+    repository: friendsRepository,
   },
 };
