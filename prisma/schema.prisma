@@ -35,6 +35,20 @@ model Friendships {
 
   user_1 Users @relation(fields: [id_user_1], references: [id], name: "user_1_relation")
   user_2 Users @relation(fields: [id_user_2], references: [id], name: "user_2_relation")
+  chat Chat[]
 
   @@map("friendships")
+}
+
+model Chat {
+  id String @id @default(uuid())
+  id_friendship String
+  from String
+  to String 
+  message String @db.Text
+  created_at DateTime @default(now())
+
+  friendship Friendships @relation(fields: [id_friendship], references: [id_friendship])
+
+  @@map("chat")
 }

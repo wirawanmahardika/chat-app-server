@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Websocket</title>
+    <script>
+      fetch("http://localhost:3000/api/v1/users/login", {
+        credentials: "include",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: "wirawan", password: "wirawan123" }),
+      })
+        .then((res) => {
+          return res.text();
+        })
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((err) => {
+          console.log(err);
+          console.log("Gagal login");
+        });
+    </script>
+  </head>
+  <body></body>
+  <script>
+    const socket = new WebSocket("ws://localhost:3000");
+
+    socket.addEventListener("open", (e) => {
+      socket.send("Hello world");
+    });
+
+    socket.addEventListener("message", (e) => {
+      console.log(JSON.parse(e.data));
+      console.log(e.data);
+    });
+
+    socket.addEventListener("error", (e) => {
+      console.log("failed to connect");
+    });
+  </script>
+</html>

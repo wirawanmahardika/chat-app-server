@@ -185,35 +185,52 @@ class requestResponseRepository {
 class friendsRepository {
   static async getFriends(id_user: string) {
     const usersByUser1 = await prisma.friendships.findMany({
-      where: { id_user_1: id_user },
-      select: {
-        id_user_2: true,
-      },
-    });
-
-    const usersByUser2 = await prisma.friendships.findMany({
-      where: { id_user_2: id_user },
-      select: {
-        id_user_1: true,
-      },
-    });
-
-    const friends = [
-      ...usersByUser1.map((u) => u.id_user_2),
-      ...usersByUser2.map((u) => u.id_user_1),
-    ];
-
-    return prisma.users.findMany({
       where: {
-        id: { in: friends },
+        id_user_1: id_user,
+        status: "friend",
       },
-      select: {
-        email: true,
-        fullname: true,
-        username: true,
-        id: true,
+      include: {
+        user_2: {
+          select: {
+            username: true,
+            fullname: true,
+            id: true,
+            email: true,
+          },
+        },
       },
     });
+    const usersByUser2 = await prisma.friendships.findMany({
+      where: {
+        id_user_2: id_user,
+        status: "friend",
+      },
+      include: {
+        user_1: {
+          select: {
+            username: true,
+            fullname: true,
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return [
+      ...usersByUser1.map((u) => {
+        return {
+          id_friendship: u.id_friendship,
+          ...u.user_2,
+        };
+      }),
+      ...usersByUser2.map((u) => {
+        return {
+          id_friendship: u.id_friendship,
+          ...u.user_1,
+        };
+      }),
+    ];
   }
 }
 

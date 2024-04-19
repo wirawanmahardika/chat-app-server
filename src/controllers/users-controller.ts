@@ -149,6 +149,7 @@ const userRoute = new Elysia({ prefix: "/user" })
   )
   .get("/friends", async ({ user }) => {
     const friends = await usersServices.friends.repository.getFriends(user.id);
+
     return friends.map((f) => {
       return {
         ...f,
