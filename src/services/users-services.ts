@@ -217,7 +217,16 @@ class friendsRepository {
       },
     });
 
-    return [
+    const friends: {
+      id: string;
+      fullname: string;
+      username: string;
+      email: string;
+      id_friendship: string;
+      message?: string;
+      from?: string;
+      created_at?: Date;
+    }[] = [
       ...usersByUser1.map((u) => {
         return {
           id_friendship: u.id_friendship,
@@ -231,6 +240,20 @@ class friendsRepository {
         };
       }),
     ];
+
+    for (const f of friends) {
+      const chat = await prisma.chat.findFirst({
+        where: { id_friendship: f.id_friendship },
+        orderBy: { created_at: "desc" },
+        select: { message: true, from: true, created_at: true },
+      });
+
+      f.message = chat?.message;
+      f.from = chat?.from;
+      f.created_at = chat?.created_at;
+    }
+
+    return friends;
   }
 }
 

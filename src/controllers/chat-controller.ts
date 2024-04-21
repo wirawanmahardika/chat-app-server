@@ -10,7 +10,7 @@ type jwtPayloadSchema = {
 
 export default new Elysia()
   .use(jwtConf())
-  .ws("/", {
+  .ws("/ws", {
     body: t.Object({
       type: t.Union([t.Literal("subscribe"), t.Literal("chat")]),
       data: t.Any(),
@@ -29,7 +29,6 @@ export default new Elysia()
       ws.id = dataFromToken.id;
 
       if (type === "subscribe") {
-        // const messages = await getChatMessages(data.channel);
         ws.subscribe(data.channel);
       }
 
@@ -49,9 +48,6 @@ export default new Elysia()
           })
         );
       }
-    },
-    error(ws) {
-      console.log(ws.error);
     },
   })
   .onBeforeHandle(async ({ jwt, cookie }) => {
