@@ -1,7 +1,13 @@
 import Elysia, { t } from "elysia";
 import jwtConf from "../config/jwt";
 import { JWTPayloadSpec } from "@elysiajs/jwt";
-import { createMessage, getChatMessages } from "../services/chat-services";
+import {
+  createMessage,
+  getChatMessages,
+  getLastMessageOfEachFriend,
+} from "../services/chat-services";
+import Stream from "@elysiajs/stream";
+import prisma from "../app/prisma";
 
 type jwtPayloadSchema = {
   username: string;
@@ -10,6 +16,13 @@ type jwtPayloadSchema = {
 
 export default new Elysia()
   .use(jwtConf())
+  .derive(async ({ jwt, cookie }) => {
+    const jwtData = await jwt.verify(cookie.auth.value);
+    return {
+      authenticated: jwtData ? true : false,
+      user: jwtData ? jwtData : { username: "", id: "" },
+    };
+  })
   .ws("/ws", {
     body: t.Object({
       type: t.Union([t.Literal("subscribe"), t.Literal("chat")]),
@@ -52,6 +65,7 @@ export default new Elysia()
   })
   .onBeforeHandle(async ({ jwt, cookie }) => {
     const result = await jwt.verify(cookie.auth.value);
+
     if (!result) {
       return new Response("Anda perlu login terlebih dahulu", { status: 401 });
     }
@@ -63,4 +77,14 @@ export default new Elysia()
       return messages;
     },
     { params: t.Object({ id_friendship: t.String() }) }
+  )
+  .get(
+    "/sse",
+    ({ user }) =>
+      new Stream((stream) => {
+        setInterval(async () => {
+          const friendsMessages = await getLastMessageOfEachFriend(user.id);
+          stream.send(friendsMessages);
+        }, 1200);
+      })
   );

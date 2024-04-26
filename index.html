@@ -27,7 +27,22 @@
   </head>
   <body></body>
   <script>
-    const socket = new WebSocket("ws://localhost:3000");
+    // const sse = new EventSource("http://localhost:3000/sse", {
+    //   withCredentials: true,
+    // });
+
+    // sse.addEventListener("message", (e) => {
+    //   console.log(e.data);
+    // });
+
+    // sse.addEventListener("open", (e) => {
+    //   console.log("Terhubung");
+    // });
+
+    // sse.addEventListener("error", (e) => {
+    //   console.log("Terjadi Error");
+    // });
+    const socket = new WebSocket("ws://localhost:3000/ws");
 
     socket.addEventListener("open", (e) => {
       socket.send("Hello world");
