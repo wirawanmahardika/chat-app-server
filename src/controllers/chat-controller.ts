@@ -4,7 +4,9 @@ import { JWTPayloadSpec } from "@elysiajs/jwt";
 import {
   createMessage,
   getChatMessages,
+  getFriendStatus,
   getLastMessageOfEachFriend,
+  updateUserStatus,
 } from "../services/chat-services";
 import Stream from "@elysiajs/stream";
 import prisma from "../app/prisma";
@@ -25,7 +27,11 @@ export default new Elysia()
   })
   .ws("/ws", {
     body: t.Object({
-      type: t.Union([t.Literal("subscribe"), t.Literal("chat")]),
+      type: t.Union([
+        t.Literal("subscribe"),
+        t.Literal("chat"),
+        t.Literal("leave"),
+      ]),
       data: t.Any(),
     }),
     async beforeHandle({ cookie, jwt }) {
@@ -43,6 +49,11 @@ export default new Elysia()
 
       if (type === "subscribe") {
         ws.subscribe(data.channel);
+        await updateUserStatus(dataFromToken.id, true);
+        ws.publish(
+          data.channel,
+          JSON.stringify({ type: "join", status: true })
+        );
       }
 
       if (type === "chat") {
@@ -61,6 +72,22 @@ export default new Elysia()
           })
         );
       }
+
+      if (type === "leave") {
+        ws.publish(
+          data.channel,
+          JSON.stringify({
+            type: "leave",
+            data: { status_friend: false },
+          })
+        );
+        ws.unsubscribe(data.channel);
+        ws.terminate();
+      }
+    },
+
+    async close(ws) {
+      await updateUserStatus(ws.data.user.id, false);
     },
   })
   .onBeforeHandle(async ({ jwt, cookie }) => {
@@ -87,4 +114,12 @@ export default new Elysia()
           stream.send(friendsMessages);
         }, 1200);
       })
+  )
+  .get(
+    "/api/v1/chats/friend_status/:id_friend",
+    async ({ params }) => {
+      const friendStatus = await getFriendStatus(params.id_friend);
+      return friendStatus;
+    },
+    { params: t.Object({ id_friend: t.String({ format: "uuid" }) }) }
   );

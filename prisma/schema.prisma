@@ -14,6 +14,7 @@ model Users {
   email String
   password String
   photo_profile Bytes @db.MediumBlob
+  status Boolean @default(false)
 
   user_1 Friendships[] @relation(name: "user_1_relation")
   user_2 Friendships[] @relation(name: "user_2_relation")
