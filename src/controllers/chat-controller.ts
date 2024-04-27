@@ -4,12 +4,10 @@ import { JWTPayloadSpec } from "@elysiajs/jwt";
 import {
   createMessage,
   getChatMessages,
-  getFriendStatus,
   getLastMessageOfEachFriend,
   updateUserStatus,
 } from "../services/chat-services";
 import Stream from "@elysiajs/stream";
-import prisma from "../app/prisma";
 
 type jwtPayloadSchema = {
   username: string;
@@ -114,12 +112,4 @@ export default new Elysia()
           stream.send(friendsMessages);
         }, 1200);
       })
-  )
-  .get(
-    "/api/v1/chats/friend_status/:id_friend",
-    async ({ params }) => {
-      const friendStatus = await getFriendStatus(params.id_friend);
-      return friendStatus;
-    },
-    { params: t.Object({ id_friend: t.String({ format: "uuid" }) }) }
   );

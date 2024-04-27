@@ -17,17 +17,6 @@ export async function createMessage(data: {
   return prisma.chat.create({ data });
 }
 
-export async function getFriendStatus(id_friend: string) {
-  const result = await prisma.users.findUnique({
-    where: { id: id_friend },
-    select: {
-      status: true,
-    },
-  });
-
-  return result?.status;
-}
-
 export async function updateUserStatus(id: string, status: boolean) {
   await prisma.users.update({ where: { id }, data: { status: status } });
 }

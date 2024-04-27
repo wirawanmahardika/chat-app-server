@@ -94,68 +94,6 @@ const userRoute = new Elysia({ prefix: "/user" })
   .delete("/", ({ cookie }) => {
     cookie.auth.remove();
     return `Berhasil logout`;
-  })
-  .post(
-    "/add-friend",
-    async ({ body, user }) => {
-      if (user.id === body.id_friend) {
-        return new Response(
-          "Tidak bisa menjalin pertemanan dengan diri sendiri",
-          { status: 500 }
-        );
-      }
-
-      const response = await usersServices.addFriend.repository.addFriend(
-        user.id,
-        body.id_friend
-      );
-
-      return new Response(response);
-    },
-    usersServices.addFriend.schema
-  )
-  .get("/friend-requests", async ({ user }) => {
-    const requests =
-      await usersServices.friendRequests.repository.getAllRequests(user.id);
-
-    return requests.map((r) => {
-      return {
-        id_friendship: r.id_friendship,
-        photo_profile:
-          process.env.SERVER_URL + "/api/v1/user/photo/" + r.user_1.id,
-        fullname: r.user_1.fullname,
-        created_at: r.created_at,
-        status: r.status,
-      };
-    });
-  })
-  .patch(
-    "/request-response",
-    async ({ body }) => {
-      const status =
-        await usersServices.requestResponse.repository.updateFriendshipStatus(
-          body.id_friendship,
-          body.status,
-          body.rejection
-        );
-
-      if (status === "friend") {
-        return "Berhasil menjalin pertemanan";
-      } else {
-        return "Berhasil menghapus permintaan pertemenan";
-      }
-    },
-    usersServices.requestResponse.schema
-  )
-  .get("/friends", async ({ user }) => {
-    const friends = await usersServices.friends.repository.getFriends(user.id);
-
-    return friends.map((f) => {
-      return {
-        ...f,
-        photo_profile: process.env.SERVER_URL + "/api/v1/user/photo/" + f.id,
-      };
-    });
   });
 
 export default new Elysia({ prefix: "/api/v1" }).use(usersRoute).use(userRoute);

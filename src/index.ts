@@ -2,6 +2,7 @@ import Elysia from "elysia";
 import corsConfig from "./config/cors";
 import usersController from "./controllers/users-controller";
 import chatController from "./controllers/chat-controller";
+import friendController from "./controllers/friend-controller";
 
 const port = process.env.PORT || 3000;
 new Elysia({
@@ -13,6 +14,7 @@ new Elysia({
   .use(corsConfig())
   .use(usersController)
   .use(chatController)
+  .use(friendController)
   .onError(() => {
     return new Response("INTERNAL SERVER ERROR", { status: 500 });
   })
