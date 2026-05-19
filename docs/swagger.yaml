@@ -1,0 +1,818 @@
+openapi: 3.0.3
+info:
+    title: Chat Application API
+    description: API documentation for real-time chat application with friend management
+    version: 1.0.0
+    contact:
+        name: API Support
+        email: support@chatapp.com
+    license:
+        name: MIT
+        url: https://opensource.org/licenses/MIT
+
+servers:
+    - url: http://localhost:3000/api/v1
+      description: Development server
+    - url: https://api.chatapp.com/api/v1
+      description: Production server
+
+tags:
+    - name: Authentication
+      description: User authentication endpoints
+    - name: Users
+      description: User management endpoints
+    - name: Friends
+      description: Friend management endpoints
+    - name: Messages
+      description: Message endpoints
+    - name: WebSocket
+      description: WebSocket connection for real-time messages
+
+components:
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+        CookieAuth:
+            type: apiKey
+            in: cookie
+            name: token
+
+    schemas:
+        # User schemas
+        User:
+            type: object
+            properties:
+                id:
+                    type: string
+                    example: '507f1f77bcf86cd799439011'
+                    description: Unique user ID
+                name:
+                    type: string
+                    example: 'John Doe'
+                    minLength: 2
+                    maxLength: 50
+                email:
+                    type: string
+                    format: email
+                    example: 'john@example.com'
+                avatar:
+                    type: string
+                    nullable: true
+                    example: 'https://example.com/avatar.jpg'
+                online:
+                    type: boolean
+                    default: false
+                lastSeen:
+                    type: string
+                    format: date-time
+                    example: '2024-01-20T10:30:00Z'
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
+
+        UserProfile:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                email:
+                    type: string
+                avatar:
+                    type: string
+                createdAt:
+                    type: string
+                    format: date-time
+
+        # Friend schemas
+        Friend:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                avatar:
+                    type: string
+                lastMessage:
+                    type: string
+                    nullable: true
+                online:
+                    type: boolean
+                lastSeen:
+                    type: string
+                    format: date-time
+
+        FriendRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                fromId:
+                    type: string
+                fromName:
+                    type: string
+                fromAvatar:
+                    type: string
+                toId:
+                    type: string
+                status:
+                    type: string
+                    enum: [pending, accepted, declined]
+                createdAt:
+                    type: string
+                    format: date-time
+
+        SendFriendRequest:
+            type: object
+            required:
+                - friendId
+            properties:
+                friendId:
+                    type: string
+                    description: ID of user to add as friend
+
+        RespondFriendRequest:
+            type: object
+            required:
+                - requestId
+            properties:
+                requestId:
+                    type: string
+
+        # Message schemas
+        Message:
+            type: object
+            properties:
+                id:
+                    type: string
+                conversationId:
+                    type: string
+                senderId:
+                    type: string
+                receiverId:
+                    type: string
+                text:
+                    type: string
+                    maxLength: 2000
+                read:
+                    type: boolean
+                    default: false
+                delivered:
+                    type: boolean
+                    default: false
+                createdAt:
+                    type: string
+                    format: date-time
+
+        SendMessage:
+            type: object
+            required:
+                - receiverId
+                - text
+            properties:
+                receiverId:
+                    type: string
+                text:
+                    type: string
+                    minLength: 1
+                    maxLength: 2000
+
+        # Response schemas
+        ApiResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                message:
+                    type: string
+                data:
+                    type: object
+
+        LoginRequest:
+            type: object
+            required:
+                - email
+                - password
+            properties:
+                email:
+                    type: string
+                    format: email
+                password:
+                    type: string
+                    format: password
+                    minLength: 6
+
+        RegisterRequest:
+            type: object
+            required:
+                - name
+                - email
+                - password
+            properties:
+                name:
+                    type: string
+                    minLength: 2
+                    maxLength: 50
+                email:
+                    type: string
+                    format: email
+                password:
+                    type: string
+                    format: password
+                    minLength: 6
+
+        AuthResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                token:
+                    type: string
+                user:
+                    $ref: '#/components/schemas/UserProfile'
+
+        ErrorResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    default: false
+                error:
+                    type: string
+                details:
+                    type: array
+                    items:
+                        type: object
+
+        # WebSocket schemas
+        WebSocketMessage:
+            type: object
+            properties:
+                type:
+                    type: string
+                    enum: [message, typing, read_receipt, online_status]
+                data:
+                    type: object
+
+        WebSocketMessageData:
+            type: object
+            properties:
+                id:
+                    type: string
+                conversationId:
+                    type: string
+                senderId:
+                    type: string
+                text:
+                    type: string
+                timestamp:
+                    type: string
+                    format: date-time
+
+        TypingIndicator:
+            type: object
+            properties:
+                conversationId:
+                    type: string
+                userId:
+                    type: string
+                isTyping:
+                    type: boolean
+
+    parameters:
+        LimitParam:
+            name: limit
+            in: query
+            schema:
+                type: integer
+                default: 50
+                minimum: 1
+                maximum: 100
+            description: Number of items to return
+        OffsetParam:
+            name: offset
+            in: query
+            schema:
+                type: integer
+                default: 0
+                minimum: 0
+            description: Number of items to skip
+        ConversationIdParam:
+            name: conversationId
+            in: path
+            required: true
+            schema:
+                type: string
+            description: ID of the conversation
+        UserIdParam:
+            name: userId
+            in: path
+            required: true
+            schema:
+                type: string
+            description: ID of the user
+
+paths:
+    # Authentication endpoints
+    /auth/register:
+        post:
+            tags:
+                - Authentication
+            summary: Register a new user
+            operationId: registerUser
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RegisterRequest'
+                        example:
+                            name: 'John Doe'
+                            email: 'john@example.com'
+                            password: 'password123'
+            responses:
+                '201':
+                    description: User registered successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AuthResponse'
+                            example:
+                                success: true
+                                token: 'eyJhbGciOiJIUzI1NiIs...'
+                                user:
+                                    id: '507f1f77bcf86cd799439011'
+                                    name: 'John Doe'
+                                    email: 'john@example.com'
+                '400':
+                    description: Validation error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '409':
+                    description: Email already exists
+
+    /auth/login:
+        post:
+            tags:
+                - Authentication
+            summary: Login user
+            operationId: loginUser
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/LoginRequest'
+                        example:
+                            email: 'john@example.com'
+                            password: 'password123'
+            responses:
+                '200':
+                    description: Login successful
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AuthResponse'
+                            example:
+                                success: true
+                                token: 'eyJhbGciOiJIUzI1NiIs...'
+                                user:
+                                    id: '507f1f77bcf86cd799439011'
+                                    name: 'John Doe'
+                                    email: 'john@example.com'
+                '401':
+                    description: Invalid credentials
+                '400':
+                    description: Validation error
+
+    /auth/logout:
+        delete:
+            tags:
+                - Authentication
+            summary: Logout user
+            operationId: logoutUser
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Logout successful
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ApiResponse'
+                            example:
+                                success: true
+                                message: 'Logged out successfully'
+
+    /auth/me:
+        get:
+            tags:
+                - Authentication
+            summary: Get current user profile
+            operationId: getCurrentUser
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Current user profile
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                    data:
+                                        $ref: '#/components/schemas/UserProfile'
+                '401':
+                    description: Unauthorized
+
+    # User endpoints
+    /users/search:
+        get:
+            tags:
+                - Users
+            summary: Search users by name or email
+            operationId: searchUsers
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: q
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+                      minLength: 2
+                  description: Search query
+                - $ref: '#/components/parameters/LimitParam'
+            responses:
+                '200':
+                    description: List of users
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                    data:
+                                        type: array
+                                        items:
+                                            $ref: '#/components/schemas/User'
+
+    /users/{userId}:
+        get:
+            tags:
+                - Users
+            summary: Get user by ID
+            operationId: getUserById
+            security:
+                - BearerAuth: []
+            parameters:
+                - $ref: '#/components/parameters/UserIdParam'
+            responses:
+                '200':
+                    description: User found
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                    data:
+                                        $ref: '#/components/schemas/User'
+                '404':
+                    description: User not found
+
+    # Friend endpoints
+    /friends:
+        get:
+            tags:
+                - Friends
+            summary: Get all friends
+            operationId: getFriends
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: List of friends
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                    data:
+                                        type: array
+                                        items:
+                                            $ref: '#/components/schemas/Friend'
+
+    /friends/requests:
+        get:
+            tags:
+                - Friends
+            summary: Get pending friend requests
+            operationId: getFriendRequests
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Pending friend requests
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                    data:
+                                        type: array
+                                        items:
+                                            $ref: '#/components/schemas/FriendRequest'
+
+    /friends/request:
+        post:
+            tags:
+                - Friends
+            summary: Send friend request
+            operationId: sendFriendRequest
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SendFriendRequest'
+                        example:
+                            friendId: '507f1f77bcf86cd799439012'
+            responses:
+                '201':
+                    description: Friend request sent
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ApiResponse'
+                            example:
+                                success: true
+                                message: 'Friend request sent'
+                '404':
+                    description: User not found
+                '409':
+                    description: Friend request already sent or already friends
+
+    /friends/accept:
+        post:
+            tags:
+                - Friends
+            summary: Accept friend request
+            operationId: acceptFriendRequest
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RespondFriendRequest'
+                        example:
+                            requestId: 'req_507f1f77bcf86cd799439011'
+            responses:
+                '200':
+                    description: Friend request accepted
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                    message:
+                                        type: string
+                                    data:
+                                        $ref: '#/components/schemas/Friend'
+                '404':
+                    description: Request not found
+
+    /friends/decline:
+        post:
+            tags:
+                - Friends
+            summary: Decline friend request
+            operationId: declineFriendRequest
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RespondFriendRequest'
+                        example:
+                            requestId: 'req_507f1f77bcf86cd799439011'
+            responses:
+                '200':
+                    description: Friend request declined
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ApiResponse'
+                '404':
+                    description: Request not found
+
+    /friends/{friendId}:
+        delete:
+            tags:
+                - Friends
+            summary: Remove friend
+            operationId: removeFriend
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: friendId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: Friend removed
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ApiResponse'
+                '404':
+                    description: Friend not found
+
+    # Message endpoints
+    /messages/conversations:
+        get:
+            tags:
+                - Messages
+            summary: Get all conversations with last message
+            operationId: getConversations
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: List of conversations
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                    data:
+                                        type: array
+                                        items:
+                                            allOf:
+                                                - $ref: '#/components/schemas/Friend'
+                                                - type: object
+                                                  properties:
+                                                      lastMessageTime:
+                                                          type: string
+                                                          format: date-time
+
+    /messages/{conversationId}:
+        get:
+            tags:
+                - Messages
+            summary: Get messages from a conversation
+            operationId: getMessages
+            security:
+                - BearerAuth: []
+            parameters:
+                - $ref: '#/components/parameters/ConversationIdParam'
+                - $ref: '#/components/parameters/LimitParam'
+                - $ref: '#/components/parameters/OffsetParam'
+            responses:
+                '200':
+                    description: List of messages
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                    data:
+                                        type: array
+                                        items:
+                                            $ref: '#/components/schemas/Message'
+                                    pagination:
+                                        type: object
+                                        properties:
+                                            limit:
+                                                type: integer
+                                            offset:
+                                                type: integer
+                                            total:
+                                                type: integer
+
+    /messages:
+        post:
+            tags:
+                - Messages
+            summary: Send a message (HTTP fallback)
+            operationId: sendMessage
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SendMessage'
+                        example:
+                            receiverId: '507f1f77bcf86cd799439012'
+                            text: 'Hello there!'
+            responses:
+                '201':
+                    description: Message sent
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                    data:
+                                        $ref: '#/components/schemas/Message'
+                '404':
+                    description: User not found
+
+    /messages/{messageId}/read:
+        patch:
+            tags:
+                - Messages
+            summary: Mark message as read
+            operationId: markMessageRead
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: messageId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                '200':
+                    description: Message marked as read
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ApiResponse'
+
+    # WebSocket
+    /ws:
+        get:
+            tags:
+                - WebSocket
+            summary: WebSocket connection for real-time messages
+
+            responses:
+                200:
+                    description: |
+                        Upgrade to WebSocket connection for real-time messaging.
+
+                        **Connection URL:** `ws://localhost:3000?token={JWT_TOKEN}`
+
+                        **Message Types:**
+
+                        1. **Send Message**
+                        ```json
+                        {
+                          "type": "message",
+                          "data": {
+                            "receiverId": "user_id",
+                            "text": "Hello!"
+                          }
+                        }
+            description: |
+                Upgrade to WebSocket connection for real-time messaging.
+
+                **Connection URL:** `ws://localhost:3000?token={JWT_TOKEN}`
+
+                **Message Types:**
+
+                1. **Send Message**
+                ```json
+                {
+                  "type": "message",
+                  "data": {
+                    "receiverId": "user_id",
+                    "text": "Hello!"
+                  }
+                }
